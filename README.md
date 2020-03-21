@@ -60,7 +60,8 @@ int f (int start) {
 ```
 is not tail recursive, since the last instruction shows a
 recursive call (a call to `f`) and this call is not a tail call:
-after computing `y := f(start - 1)`, we still should evaluate 
+after computing `y := f(start - 1)`, we still need to
+ evaluate 
 `1 + y` before exiting.
 
 A contrario, the method
@@ -100,7 +101,7 @@ private BigInteger _fibonacci(BigInteger prev, BigInteger current, int remaining
 }
 ```
 The tail recursive function is `_fibonacci`. Its access is private, as we do not
-trust the user about the input: are they non null? is it called with (1,1)?
+trust the user about the input: are they non null? Is it called with (1,1)?
 Nor about the
 remaining number of iterations: is it non negative?
 Rather, we expose a public executor
@@ -160,7 +161,7 @@ and in consequence, change accordingly
 
 We think this is no great constraint.
 Indeed, the method `_fibonacci` *is expected to be*
-tail recursive, hence no operation should be perform on it inside its definition.
+tail recursive, hence no operation should be performed on it inside its definition.
 Thanks to Java boxing/unboxing, primitives return types are also supported.
 
 In addition, as `_fibonacci` is welcome to stay private, the public `fibonacci` takes
@@ -172,7 +173,7 @@ the final result of `_fibonacci` is a `BigInteger` instance.
 ### Tail recursive strategy
 
 The major part of the job we'll have to do to avoid a stack overflow is
-to break the recursivity. We need to be able to distinguish between the two following situations:
+to break the recursivity. We need to be able to distinguish the two following situations:
 1. The result of `_fibonacci` is a *end result*
 (`BigInteger`, `Integer`, `Long`, whatever...)
 2. The result of `_fibonacci` is a call to itself.
@@ -291,21 +292,21 @@ public interface ArgsContainer {
 
 }
 ```
-There is not much to about the structure of this interface.
+There is not much to say about the structure of this interface.
 In fact, our interest will be in the way of storing such an object.
 Indeed, nothing in `_fibonacci` was designed
 to provide an arguments-container: the signature of the function is
 ```
 Object _fibonacci(BigInteger prev, BigInteger current, int remainingIter)
 ```
-and none of the two arguments may tweaked as we did for the `PROOF`, because they
+and none of the two arguments may be tweaked as we did for the `PROOF`, because they
 are strongly typed and **we do not want to change that**. Remember: changing the
 return type was ok because of tail recursion. On the other hand, method arguments should stay
 as they are.
 
 ### Hiding the container in a context
 
-If we were in Scala, another valuable option would be to provide an implicit parameter for
+If we were in Scala, a valuable option would be to provide an implicit parameter for
 `_fibonacci` containing a context:
 ```
 public interface MethodExecutionContext {
@@ -320,15 +321,15 @@ Object _fibonacci(BigInteger prev, BigInteger current, int remainingIter)
                  (implicit ctx: MethodExecutionContext)  --> scala syntax
 ```
 This may be a nice compromise between code readability and
-code alteration. (Off course in Scala you already have tail recursion...)
-However, no such thing exist in Java.
+code alteration. (Of course in Scala you already have tail recursion...)
+However, no such thing exists in Java.
 
 Another option would be to put the context in a static variable somewhere or, better,
 in some concurrent map `Map<Thread, MethodExecutionContext>`. After all: one recursive call
 will be executed by one thread, and one thread will execute only one recursive call at a time.
-This leads to question concurrency, dead references, ...
+This leads to questions about concurrency, dead references, ...
 
-This is not the way we have chosen to follow. Rather, we are going to
+We have chosen another approach. We 
 create *a context as a Thread*. This technique is not new and is widely used in Spring applications,
 for example. Same story here: we are going to enclose our method call in
 a context provider thread:
@@ -357,9 +358,9 @@ or a last conversion for a better return type.
 
 All these checks are "business checks", relevant for the end user and full of
 business logic. We should not change that; but we should enclose our
-method in such a way that it prepare the execution context for us.
+method in such a way that it prepares the execution context for us.
 
-First it should be able to check that the current Thread is indeed an execution context:
+First it should be able to check that the current thread has indeed an execution context:
 ```
 public final void assertLegitAccess() {
     if (Thread.currentThread() instanceof WithMethodExecutionContext) setupContext();
@@ -432,15 +433,14 @@ So far so good, we have sketched the basic algorithms of our tail recursive appr
 Now we need to draw a link between our algorithms and the final `fibonacci` and `_fibonacci`
 methods.
 
-They are many ways to do that: we can define those methods together in a custom structure (a class)
-that will perform the wrapping for us. This method offers some implementation/usage issues:
-first it should act by reflexion to guess the *real method signatures*: so far our algorithms are
-expressed via the super `Object` class. Technically, we should have used generics but remember that
-the number of arguments (and thus, of generics) used to express `fibonacci` and `_fibonacci` are a
+There are many ways to do that: we could combine those methods together in a custom structure (a class)
+that will perform the wrapping for us. This would lead to some implementation/usage issues:
+first it would act by reflexion to guess the *real method signatures*. Furthermore, we would have to use generics.
+ We recall that the number of arguments (and thus, of generics) used to express `fibonacci` and `_fibonacci` are
 business matter, and we are doing the plumbery here. Also, in Java, primitives cannot be used as
 generic types.
 
-Another approach would be to use reflexion, but then we need to be aware of a lot of things
+Another approach would be to use reflexion, but then we would need to be aware of a lot of things
 that may not be so easy to get. For example: defining `_fibonacci` as a private method
 would require us to turn it accessible for reflexion invoke, which is quite a strong side effect.
 
@@ -451,12 +451,12 @@ If you want to make your annotations useful for "something", you usually rely on
 to generate code for you. This is fine but a bit unstructured.
 
 We have chosen Aspect Oriented Programming to glue our algorithms together.
-Aspects are other structures, orthogonal to classes, whose aim is to provide "the same kind of extra
-behavior for you business logic". Typically: logging, security context, remote service connection
+Aspects are other structures, orthogonal to classes, whose aim is to provide "implementation of cross-cutting concerns".
+ Typically: logging, security context, remote service connection
 context, ...
 
 It really sounds like what Java lacks: context! And it also sounds good for us. With AOP, we can define
-an aspect that will act on different parts of the code:
+an aspect that will act at different moments of execution:
 ```
 @Aspect
 public class TailRecursiveAspect extends JointPointConverter {
@@ -530,7 +530,7 @@ Around this pointcut, we define an advice:
 The advice catches the method that is called in the `ProceedingJoinPoint` parameter.
 
 On any call to `_fibonacci`, it will actually call the `aroundTailRedAdvice`
-advice with `_fibonacci`. Here we can access the arguments via `jp.getArgs()`
+advice with `_fibonacci` as join point. Here we can access the arguments via `jp.getArgs()`
 and we can also let the process continue via `jp.proceed(...)`. We should provide a return
 value for the call. The advice
 ```
@@ -546,7 +546,7 @@ arguments and the returning value, using our `tailRecTrap` algorithm.
 Same goes for the `TailRecursiveExecutor` advice: it will continue the join point process
 in our custom tail-recursive context.
 
-### Letting Maven compile
+### Letting Maven compile (personnal feedback)
 
 Debugging advices with AspectJ is, I would say, quite a mess.
 As I'm using Maven, I included the following dependency
@@ -622,7 +622,7 @@ Is tail recursion really useful? Well, in many situations, you
 *may not expect* stackoverflows. But usually you cannot guarantee it.
 For example, finding cycles in a graph may be done in a tail
 recursive way without optimization, and everything will just work
-fine! Until the client pushes an too large input...
+fine! Until the client pushes a too large input...
 
 In those cases, you have to make a choice that goes beyond
 the scope of performance:
@@ -633,13 +633,13 @@ Note that `StackOverflowError` extends `VirtualMachineError`,
 which extends `Error`: **those kind of throwable you should never ever
 try to catch**, ever...
 
-With the tail recursive approach we did, you *do not optimize*
-your code. Rather, you allow a certain code style (if you hate it,
+With the aspect we built, we *do not optimize*
+our code. Rather, we allow a certain code style (if you hate it,
 just continue with streams!) with the following philosophy:
-"I'm aware that I'm going a bit too much of overhead, but it's
-worth it as avoid an `Error` to happen."
+"I'm aware that I'm doing a bit too much of overhead, but it's
+worth it as it avoids an `Error` to happen."
 
-Further developments are then left to your business:
+Further developments are then left to you:
 enrich with memoization, improve threading, allow
 configuration,...
 Be creative, have fun, and learn as much as you can!
