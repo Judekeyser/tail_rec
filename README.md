@@ -3,6 +3,49 @@
 This project illustrates an example of code generation via AOP
 to bring tail recursion in Java.
 
+## Long story short
+
+Fibonacci tail recursive implementation:
+```
+public class Fibo {
+
+    @TailRecursiveExecutor
+    public BigInteger fibonacci(int N) {
+        if (N < 0) throw
+                new IllegalArgumentException("Negative ranked Fibonacci is not defined");
+        if (N == 0 || N == 1)
+            return BigInteger.valueOf(1L);
+        return (BigInteger) _fibonacci(BigInteger.valueOf(1L), BigInteger.valueOf(1L), N - 2);
+    }
+
+    @TailRecursive
+    private Object _fibonacci(BigInteger prev, BigInteger current, int remainingIter) {
+        if (remainingIter == 0)
+            return current;
+        return _fibonacci(current, prev.add(current), remainingIter - 1);
+    }
+
+}
+```
+Unit test:
+```
+public class FiboTest {
+
+    @Test
+    public void fibonacci() {
+        BigInteger largeNumber = new Fibo().fibonacci(1000000);
+
+        String asStr = largeNumber.toString();
+
+        assertTrue(asStr.startsWith("1953"));
+        assertTrue(asStr.endsWith("875"));
+        assertEquals(208988, asStr.length());
+    }
+
+}
+```
+Then `mvn clean compile test`, then thanks for reading!
+
 ## Introduction
 
 ### Tail recursive methods
