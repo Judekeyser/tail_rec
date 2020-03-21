@@ -5,10 +5,10 @@ import be.jdevelopment.tailrec.lib.threading.TailRecursiveExecutor;
 
 import java.math.BigInteger;
 
-class Fibo {
+public class Fibo {
 
     @TailRecursiveExecutor
-    BigInteger fibonacci(int N) {
+    public BigInteger fibonacci(int N) {
         if (N < 0) throw
                 new IllegalArgumentException("Negative ranked Fibonacci is not defined");
         if (N == 0 || N == 1)
