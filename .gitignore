@@ -6,6 +6,7 @@ target/*
 
 # Log file
 *.log
+ajcore*
 
 # BlueJ files
 *.ctxt
