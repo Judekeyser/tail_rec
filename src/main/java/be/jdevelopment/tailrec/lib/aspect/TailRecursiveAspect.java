@@ -34,7 +34,7 @@ public class TailRecursiveAspect extends JoinPointConverter {
 
     /* Implementation specific */
 
-    public void register(String binderKey, RecursiveContextBinder contextBinder) {
+    public static void register(String binderKey, RecursiveContextBinder contextBinder) {
         JoinPointConverter.BINDER_REPOSITORY.put(binderKey, contextBinder);
     }
 

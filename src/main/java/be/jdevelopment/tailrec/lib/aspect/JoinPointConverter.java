@@ -28,7 +28,7 @@ class JoinPointConverter {
 
     RecursiveContextBinder getContextBinder(TailRecursiveExecutor tailRecursiveExecutor) {
         return Optional.ofNullable(tailRecursiveExecutor)
-                .map(TailRecursiveExecutor::parameter)
+                .map(TailRecursiveExecutor::executor)
                 .map(BINDER_REPOSITORY::get)
                 .orElse(DEFAULT_CTX);
     }
