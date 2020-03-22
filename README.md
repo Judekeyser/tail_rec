@@ -3,7 +3,9 @@
 This project illustrates an example of code generation via AOP
 to bring tail recursion in Java.
 
-## Long story short
+## Forewords
+
+### Long story short
 
 Fibonacci tail recursive implementation:
 ```
@@ -46,7 +48,7 @@ public class FiboTest {
 ```
 Then `mvn clean compile test`.
 
-## In tail recursion useful?
+### Is tail recursion useful?
 
 Is tail recursion really useful? Well, in many situations, you
 *may not expect* stackoverflows. But usually you cannot guarantee it.
