@@ -1,16 +1,10 @@
 package be.jdevelopment.tailrec.lib.strategy;
 
-public abstract class RecursiveStrategyTemplate {
+public abstract class RecursiveStrategyTemplate implements RecursiveStrategy {
 
     protected abstract ArgsContainer getArgsContainer();
 
-    public @FunctionalInterface interface ArgsProvider {
-        Object[] getArgs();
-    }
-    public @FunctionalInterface interface MethodCall {
-        Object call(Object[] args) throws Throwable;
-    }
-    public final Object tailRecTrap(MethodCall methodCall, ArgsProvider argsProvider) throws Throwable {
+    @Override public final Object tailRecTrap(MethodCall methodCall, ArgsProvider argsProvider) throws Throwable {
         ArgsContainer argsContainer = getArgsContainer();
 
         if (argsContainer.getArgs() != null) {

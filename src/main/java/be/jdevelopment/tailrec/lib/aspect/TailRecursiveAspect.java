@@ -5,7 +5,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 
 @Aspect
-public class TailRecursiveAspect extends JointPointConverter {
+public class TailRecursiveAspect extends JoinPointConverter {
 
     private static final Context context = new Context();
     private static final Strategy strategy = new Strategy(context);

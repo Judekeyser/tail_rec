@@ -4,7 +4,7 @@ import be.jdevelopment.tailrec.lib.strategy.RecursiveStrategyTemplate;
 import be.jdevelopment.tailrec.lib.threading.ContextStorageTemplate;
 import org.aspectj.lang.ProceedingJoinPoint;
 
-class JointPointConverter {
+class JoinPointConverter {
 
     ContextStorageTemplate.MethodCall asCtxMethodCall(ProceedingJoinPoint jp) {
         return jp::proceed;

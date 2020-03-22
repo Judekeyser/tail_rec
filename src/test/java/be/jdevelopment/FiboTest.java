@@ -2,10 +2,9 @@ package be.jdevelopment;
 
 import be.jdevelopment.tailrec.Fibo;
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 import java.math.BigInteger;
-
-import static org.junit.Assert.*;
 
 public class FiboTest {
 
@@ -18,6 +17,9 @@ public class FiboTest {
         assertTrue(asStr.startsWith("1953"));
         assertTrue(asStr.endsWith("875"));
         assertEquals(208988, asStr.length());
+
+        System.out.println("1000th Fibonacci number is:");
+        System.out.println(asStr);
     }
 
 }
