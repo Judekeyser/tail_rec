@@ -19,9 +19,9 @@ one:
 public class Fibo {
 
     BigInteger fibonacci(int N) {
-        if (N < 0) throw
+        if (N <= 0) throw
                 new IllegalArgumentException("Negative ranked Fibonacci is not defined");
-        if (N == 0 || N == 1)
+        if (N == 1)
             return BigInteger.valueOf(1L);
         return _fibonacci(BigInteger.valueOf(1L), BigInteger.valueOf(1L), N - 2);
     }
@@ -63,17 +63,3 @@ returns an `Object`. If you don't, magic won't occur
 (for your own safety).
 
 That's all! Have fun.
-
-### Using the customizable `@TailRecursiveEntry`
-
-The `@TailRecursive` method requires to be executed in a
-thread that also implement
-`be.jdevelopment.tailrec.lib.threading.WithMethodExecutionContext`.
-The previous `@TailRecursiveExecutor` method creates a new thread
-with this feature, and let the recursive call occur inside of it.
-
-If you prefer full control on execution, decorate the public method
-with `@TailRecursiveEntry` instead of `@TailRecursiveExecution`.
-It will first check if context is ok, then it will run the
-`@TailRecursive` method in the current thread.
-

@@ -1,47 +1,51 @@
 package be.jdevelopment.tailrec.lib.aspect;
 
-import org.aspectj.lang.JoinPoint;
+import be.jdevelopment.tailrec.lib.strategy.ArgsContainer;
+import be.jdevelopment.tailrec.lib.strategy.RecursiveStrategyTemplate;
+import be.jdevelopment.tailrec.lib.threading.RecursiveContextBinder;
+import be.jdevelopment.tailrec.lib.threading.TailRecursiveExecutor;
+import be.jdevelopment.tailrec.lib.threading.WithMethodExecutionContext;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 
 @Aspect
 public class TailRecursiveAspect extends JoinPointConverter {
 
-    private static final Context context = new Context();
-    private static final Strategy strategy = new Strategy(context);
-
     /* Pointcuts */
 
     @Pointcut("@annotation(be.jdevelopment.tailrec.lib.strategy.TailRecursive) && execution(Object *(..))")
     public void tailRecursiveCallPointcut() {}
 
-    @Pointcut("@annotation(be.jdevelopment.tailrec.lib.threading.TailRecursiveExecutor) && execution(* *(..))")
-    public void tailRecursiveExecutionPointcut() {}
-
-    @Pointcut("@annotation(be.jdevelopment.tailrec.lib.threading.TailRecursiveEntry) && execution(* *(..))")
-    public void tailRecursiveGatewayPointcut() {}
+    @Pointcut("@annotation(tailRecursiveExecutor) && execution(* *(..))")
+    public void tailRecursiveExecutionPointcut(TailRecursiveExecutor tailRecursiveExecutor) {}
 
     /* Advices */
 
     @Around("tailRecursiveCallPointcut()")
     public Object aroundTailRecAdvice(ProceedingJoinPoint jp) throws Throwable {
-        return strategy.tailRecTrap(asStrategyMethodCall(jp), asArgProvider(jp));
+        return ThreadBasedStrategy.INSTANCE.tailRecTrap(asStrategyMethodCall(jp), asArgProvider(jp));
     }
 
-    @Around("tailRecursiveExecutionPointcut()")
-    public Object aroundExecutorAdvice(ProceedingJoinPoint jp) throws Throwable {
-        return context.awaitForResult(asCtxMethodCall(jp));
+    @Around("tailRecursiveExecutionPointcut(tailRecursiveExecutor)")
+    public Object aroundExecutorAdvice(ProceedingJoinPoint jp, TailRecursiveExecutor tailRecursiveExecutor) throws Throwable {
+        return getContextBinder(tailRecursiveExecutor)
+                .bindInContext(asCtxMethodCall(jp));
     }
 
-    @Before("tailRecursiveGatewayPointcut()")
-    public void beforeEntryAdvice(JoinPoint jp) {
-        context.assertLegitAccess();
-        context.setupContext();
+    /* Implementation specific */
+
+    public void register(String binderKey, RecursiveContextBinder contextBinder) {
+        JoinPointConverter.BINDER_REPOSITORY.put(binderKey, contextBinder);
     }
 
-    @After("tailRecursiveGatewayPointcut()")
-    public void afterEntryAdvice(JoinPoint jp) {
-        context.relaxStorage();
+    private static class ThreadBasedStrategy extends RecursiveStrategyTemplate {
+        private static final RecursiveStrategyTemplate INSTANCE = new ThreadBasedStrategy();
+
+        @Override protected ArgsContainer getArgsContainer() {
+            return ((WithMethodExecutionContext) Thread.currentThread())
+                    .getMethodExecutionContext()
+                    .getArgsContainer();
+        }
     }
 
 }
