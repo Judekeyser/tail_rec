@@ -44,7 +44,35 @@ public class FiboTest {
 
 }
 ```
-Then `mvn clean compile test`, then thanks for reading!
+Then `mvn clean compile test`.
+
+## In tail recursion useful?
+
+Is tail recursion really useful? Well, in many situations, you
+*may not expect* stackoverflows. But usually you cannot guarantee it.
+For example, finding cycles in a graph may be done in a tail
+recursive way without optimization, and everything will just work
+fine! Until the client pushes a too large input...
+
+In those cases, you have to make a choice that goes beyond
+the scope of performance:
+code readability and maintenance, or safety at runtime.
+Usually you sacrifice code style, because the cost
+of an error is very high.
+Note that `StackOverflowError` extends `VirtualMachineError`,
+which extends `Error`: **those kind of throwable you should never ever
+try to catch**, ever...
+
+With the aspect approach, we *do not optimize*
+our code. Rather, we allow a certain code style (if you hate it,
+just don't use it!) with the following philosophy:
+"I'm aware that I'm doing a bit too much of overhead, but it's
+worth it as it avoids an `Error` to happen."
+
+Further developments are then left to you:
+enrich with memoization, improve threading, allow
+configuration,...
+Be creative!
 
 ## Introduction
 
@@ -610,36 +638,3 @@ fully qualified:
 ```
 @Around("@annotation(be.jdevelopment.tailrec.lib.strategy.TailRecursive) && execution(Object *(..))")
 ```
-Full code and project is available on
-https://github.com/Judekeyser/tail_rec
-
-## Conclusion
-
-We have implemented a tail recursion mechanism inside
-Java in an AOP mindset.
-
-Is tail recursion really useful? Well, in many situations, you
-*may not expect* stackoverflows. But usually you cannot guarantee it.
-For example, finding cycles in a graph may be done in a tail
-recursive way without optimization, and everything will just work
-fine! Until the client pushes a too large input...
-
-In those cases, you have to make a choice that goes beyond
-the scope of performance:
-code readability and maintenance, or safety at runtime.
-Usually you sacrifice code style, because the cost
-of an error is very high.
-Note that `StackOverflowError` extends `VirtualMachineError`,
-which extends `Error`: **those kind of throwable you should never ever
-try to catch**, ever...
-
-With the aspect we built, we *do not optimize*
-our code. Rather, we allow a certain code style (if you hate it,
-just continue with streams!) with the following philosophy:
-"I'm aware that I'm doing a bit too much of overhead, but it's
-worth it as it avoids an `Error` to happen."
-
-Further developments are then left to you:
-enrich with memoization, improve threading, allow
-configuration,...
-Be creative, have fun, and learn as much as you can!
