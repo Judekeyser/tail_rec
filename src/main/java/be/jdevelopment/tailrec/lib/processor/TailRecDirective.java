@@ -1,4 +1,4 @@
-package be.jdevelopment.tailrec.lib.threading;
+package be.jdevelopment.tailrec.lib.processor;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -6,9 +6,5 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
-@Target(ElementType.METHOD)
-public @interface TailRecursiveExecutor {
-
-    String executor() default "default-executor";
-
-}
+@Target(ElementType.TYPE)
+public @interface TailRecDirective { }

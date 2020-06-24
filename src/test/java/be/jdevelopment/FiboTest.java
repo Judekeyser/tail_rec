@@ -1,6 +1,6 @@
 package be.jdevelopment;
 
-import be.jdevelopment.tailrec.Fibo;
+import be.jdevelopment.tailrec.example.Fibo;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -9,7 +9,7 @@ import java.math.BigInteger;
 public class FiboTest {
 
     @Test
-    public void fibonacci() {
+    public void fibonacci() throws Exception {
         BigInteger largeNumber = new Fibo().fibonacci(1000000);
 
         String asStr = largeNumber.toString();

@@ -1,0 +1,29 @@
+package ${package_name} ;
+
+import be.jdevelopment.tailrec.lib.aspect.TailRecursiveAspect;
+
+public final class ${engine_name} extends ${directive_name} {
+    TailRecursiveAspect< ${engine_name} > aspect = new TailRecursiveAspect<>( ${executor_name} );
+
+    private enum NAMESPACE {SELF;}
+
+    public Object ${tail_rec_name} (Object[] args, NAMESPACE self) {
+        assert self != null;
+        return super. ${tail_rec_name} ( ${tail_rec_unwrapped_array} );
+    }
+
+    @Override
+    protected Object ${tail_rec_name} ( ${tail_rec_args_signature} ) {
+        return aspect.aroundTailRecAdvice(
+                $ -> args -> $.invokeExact(this, args, NAMESPACE.SELF),
+                () -> new Object[] { ${tail_rec_args_name} }
+                );
+    }
+
+    @Override
+    public ${tail_executor_return_type} ${tail_executor_name} ( ${tail_executor_args_signature} ) throws ${tail_executor_throw_types} {
+        aspect.initializeAroundTailRec( ${engine_name} .class, ${tail_rec_name} , NAMESPACE.class);
+        return ( ${tail_executor_return_type} )
+            aspect.aroundExecutorAdvice(() -> super. ${tail_executor_name} ( ${tail_executor_args_name} ));
+    }
+}

@@ -1,51 +1,78 @@
 package be.jdevelopment.tailrec.lib.aspect;
 
-import be.jdevelopment.tailrec.lib.strategy.ArgsContainer;
-import be.jdevelopment.tailrec.lib.strategy.RecursiveStrategyTemplate;
+import be.jdevelopment.tailrec.lib.strategy.RecursiveStrategy;
 import be.jdevelopment.tailrec.lib.threading.RecursiveContextBinder;
-import be.jdevelopment.tailrec.lib.threading.TailRecursiveExecutor;
-import be.jdevelopment.tailrec.lib.threading.WithMethodExecutionContext;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.*;
 
-@Aspect
-public class TailRecursiveAspect extends JoinPointConverter {
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.util.Objects;
+public class TailRecursiveAspect<T> {
 
-    /* Pointcuts */
+    /* Dynamic invokers */
 
-    @Pointcut("@annotation(be.jdevelopment.tailrec.lib.strategy.TailRecursive) && execution(Object *(..))")
-    public void tailRecursiveCallPointcut() {}
-
-    @Pointcut("@annotation(tailRecursiveExecutor) && execution(* *(..))")
-    public void tailRecursiveExecutionPointcut(TailRecursiveExecutor tailRecursiveExecutor) {}
-
-    /* Advices */
-
-    @Around("tailRecursiveCallPointcut()")
-    public Object aroundTailRecAdvice(ProceedingJoinPoint jp) throws Throwable {
-        return ThreadBasedStrategy.INSTANCE.tailRecTrap(asStrategyMethodCall(jp), asArgProvider(jp));
+    private final Object monitor = new Object();
+    private MethodHandle aroundTailRec;
+    private final String tailRecConfig;
+    public TailRecursiveAspect(String tailRecConfig) {
+        this.tailRecConfig = tailRecConfig;
     }
 
-    @Around("tailRecursiveExecutionPointcut(tailRecursiveExecutor)")
-    public Object aroundExecutorAdvice(ProceedingJoinPoint jp, TailRecursiveExecutor tailRecursiveExecutor) throws Throwable {
-        return getContextBinder(tailRecursiveExecutor)
-                .bindInContext(asCtxMethodCall(jp));
+    public void initializeAroundTailRec(Class<?> directive, String methodName, Class<?> namespace) {
+        if (aroundTailRec != null) return;
+        synchronized (monitor) {
+            if (aroundTailRec != null) return;
+            try {
+                MethodType jvmType = MethodType.methodType(Object.class, Object[].class, namespace);
+                MethodHandles.Lookup lookup = MethodHandles.lookup();
+                aroundTailRec = lookup.findVirtual(directive, methodName, jvmType);
+            } catch(Throwable e) {
+                throw new Error(e);
+            }
+        }
+    }
+
+    /* Utils from directive implementations */
+
+    @FunctionalInterface
+    public interface MethodCallProvider {
+        RecursiveStrategy.MethodCall provide (MethodHandle handle);
+    }
+
+    public Object aroundTailRecAdvice(MethodCallProvider methodCallProvider, RecursiveStrategy.ArgsProvider provider) {
+        Objects.requireNonNull(aroundTailRec);
+        RecursiveStrategy.MethodCall call = methodCallProvider.provide(aroundTailRec);
+        return weakenAroundTailRecAdvice(call, provider);
+    }
+
+    private <T extends Throwable> Object weakenAroundTailRecAdvice(
+            RecursiveStrategy.MethodCall methodCall,
+            RecursiveStrategy.ArgsProvider provider) throws T {
+        try {
+            return ThreadBasedStrategy.INSTANCE.tailRecTrap(methodCall, provider);
+        } catch(Throwable e) {
+            throw (T) e;
+        }
+    }
+
+    public Object aroundExecutorAdvice(RecursiveContextBinder.MethodCall methodCall) {
+        Objects.requireNonNull(tailRecConfig);
+        return weakenAroundExecutorAdvice(methodCall);
+    }
+
+    private <T extends Throwable> Object weakenAroundExecutorAdvice(RecursiveContextBinder.MethodCall methodCall) throws T {
+        try {
+            return ThreadBasedStrategy.INSTANCE.getContextBinder(tailRecConfig)
+                    .bindInContext(methodCall);
+        } catch(Throwable e) {
+            throw (T) e;
+        }
     }
 
     /* Implementation specific */
 
     public static void register(String binderKey, RecursiveContextBinder contextBinder) {
-        JoinPointConverter.BINDER_REPOSITORY.put(binderKey, contextBinder);
-    }
-
-    private static class ThreadBasedStrategy extends RecursiveStrategyTemplate {
-        private static final RecursiveStrategyTemplate INSTANCE = new ThreadBasedStrategy();
-
-        @Override protected ArgsContainer getArgsContainer() {
-            return ((WithMethodExecutionContext) Thread.currentThread())
-                    .getMethodExecutionContext()
-                    .getArgsContainer();
-        }
+        ThreadBasedStrategy.BINDER_REPOSITORY.put(binderKey, contextBinder);
     }
 
 }
