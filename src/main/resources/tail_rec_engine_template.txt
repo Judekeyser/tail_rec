@@ -1,0 +1,44 @@
+package ${package_name} ;
+
+import be.jdevelopment.tailrec.lib.aspect.TailRecursiveAspect;
+
+public final class ${engine_name} implements ${directive_name} {
+    private final Engine engine = new Engine();
+
+    @Override
+    public Object ${tail_rec_name} ( ${tail_rec_args_signature} ) {
+        throw new java.lang.UnsupportedOperationException();
+    }
+
+    @Override
+    public ${tail_executor_return_type} ${tail_executor_name} ( ${tail_executor_args_signature} ) throws ${tail_executor_throw_types} {
+        return engine. ${tail_executor_name} ( ${tail_executor_args_name} );
+    }
+
+    public static final class Engine implements ${directive_name} {
+        private Engine() {}
+        TailRecursiveAspect< ${engine_name} > aspect = new TailRecursiveAspect<>();
+
+        private enum NAMESPACE {SELF;}
+
+        public Object ${tail_rec_name} (Object[] args, NAMESPACE self) {
+            assert self != null;
+            return ${directive_name} .super. ${tail_rec_name} ( ${tail_rec_unwrapped_array} );
+        }
+
+        @Override
+        public Object ${tail_rec_name} ( ${tail_rec_args_signature} ) {
+            return aspect.aroundTailRecAdvice(
+                    $ -> args -> $.invokeExact(this, args, NAMESPACE.SELF),
+                    () -> new Object[] { ${tail_rec_args_name} }
+                    );
+        }
+
+        @Override
+        public ${tail_executor_return_type} ${tail_executor_name} ( ${tail_executor_args_signature} ) throws ${tail_executor_throw_types} {
+            aspect.initializeAroundTailRec(getClass(), ${str:tail_rec_name} , NAMESPACE.class);
+            return ( ${tail_executor_return_type} )
+                aspect.aroundExecutorAdvice(() -> ${directive_name} .super. ${tail_executor_name} ( ${tail_executor_args_name} ));
+        }
+    }
+}

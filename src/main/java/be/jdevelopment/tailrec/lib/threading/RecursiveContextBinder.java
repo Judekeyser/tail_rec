@@ -5,6 +5,6 @@ public interface RecursiveContextBinder {
     @FunctionalInterface interface MethodCall {
         Object call() throws Throwable;
     }
-    Object bindInContext(MethodCall methodCall) throws Throwable;
+    Object executeInContext(MethodCall methodCall) throws Throwable;
 
 }

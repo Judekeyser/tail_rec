@@ -4,15 +4,16 @@ import be.jdevelopment.tailrec.lib.strategy.ArgsContainer;
 import be.jdevelopment.tailrec.lib.threading.MethodExecutionContext;
 import be.jdevelopment.tailrec.lib.threading.WithMethodExecutionContext;
 
-class ContextThread extends Thread implements WithMethodExecutionContext {
+class DefaultContextHolder implements WithMethodExecutionContext {
 
-    private final MethodExecutionContext ctx = new MethodExecutionContextBasicImpl();
+    private MethodExecutionContext ctx = null;
 
-    ContextThread(Runnable r) {
-        super(r);
+    void renewContext() {
+        ctx = new MethodExecutionContextBasicImpl();
     }
 
-    @Override public MethodExecutionContext getMethodExecutionContext() {
+    @Override
+    public MethodExecutionContext getMethodExecutionContext() {
         return ctx;
     }
 
@@ -29,4 +30,5 @@ class ContextThread extends Thread implements WithMethodExecutionContext {
         }
 
     }
+
 }
