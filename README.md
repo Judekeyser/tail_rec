@@ -26,7 +26,7 @@ Define a tail recursive algorithm using a interface **contract**:
 ```java
 interface Fibo {
 
-    default BigInteger fibonacci(int N) {
+    default BigInteger fibonacci(int N) throws Exception {
         if (N <= 0) throw
                 new IllegalArgumentException("Negative ranked Fibonacci is not defined");
         if (N == 1)
