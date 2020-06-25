@@ -7,10 +7,10 @@ import be.jdevelopment.tailrec.lib.threading.TailRecursiveExecutor;
 import java.math.BigInteger;
 
 @TailRecDirective
-class FiboDirective {
+interface FiboDirective {
 
     @TailRecursiveExecutor
-    public BigInteger fibonacci(int N) throws Exception {
+    default BigInteger fibonacci(int N) throws Exception {
         if (N < 0) throw
                 new IllegalArgumentException("Negative ranked Fibonacci is not defined");
         if (N == 0 || N == 1)
@@ -19,7 +19,7 @@ class FiboDirective {
     }
 
     @TailRecursive
-    protected Object _fibonacci(BigInteger prev, BigInteger current, int remainingIter) {
+    default Object _fibonacci(BigInteger prev, BigInteger current, int remainingIter) {
         if (remainingIter == 0)
             return current;
         return _fibonacci(current, prev.add(current), remainingIter - 1);
