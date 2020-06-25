@@ -11,14 +11,9 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.Set;
-import java.util.function.IntFunction;
-import java.util.regex.Matcher;
+import javax.tools.Diagnostic;
+import java.io.*;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -40,25 +35,27 @@ public final class TailRecDirectiveProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations,
-                           RoundEnvironment roundEnv) {
-
+                           RoundEnvironment roundEnv
+    ) {
         for (TypeElement annotation : annotations) {
             Set<? extends Element> annotatedElements
                     = roundEnv.getElementsAnnotatedWith(annotation);
 
-            for (Element annotatedElement : annotatedElements)
-                onDirectiveFound(annotatedElement);
+            for (Element annotatedElement : annotatedElements) {
+                var mapping = inferMapping(annotatedElement);
+                var content = fileContent(mapping);
+                safeCreateClassFile(content, mapping.get("package_name"), mapping.get("engine_name"));
+            }
         }
 
         return true;
     }
 
-    private void onDirectiveFound(Element element) {
+    private Map<String,String> inferMapping(Element element) {
         assert element.getKind() == ElementKind.CLASS;
         assert element instanceof TypeElement;
         var clz = (TypeElement) element;
         assert element.getSimpleName().toString().endsWith("Directive");
-        System.out.print("\n\n>> " + element);
 
         var tailRecursiveMethod = clz.getEnclosedElements().stream()
                 .filter($ -> $.getKind() == ElementKind.METHOD)
@@ -84,6 +81,7 @@ public final class TailRecDirectiveProcessor extends AbstractProcessor {
         mapping.put("directive_name", clz.getSimpleName());
         mapping.put("engine_name", clz.getSimpleName().toString().substring(0, clz.getSimpleName().toString().length() - "Directive".length()));
         mapping.put("tail_rec_name", tailRecursiveMethod.getSimpleName());
+        mapping.put("str:tail_rec_name", '"' + tailRecursiveMethod.getSimpleName().toString() + '"');
         mapping.put("tail_executor_name", tailExecutorMethod.getSimpleName());
         mapping.put("tail_rec_unwrapped_array", IntStream.range(0, tailRecursiveParameters.size())
                 .mapToObj(i -> String.format("(%s)args[%d]", tailRecursiveParameters.get(i).asType(), i))
@@ -110,36 +108,60 @@ public final class TailRecDirectiveProcessor extends AbstractProcessor {
                 .map(TypeMirror::toString)
                 .collect(Collectors.joining(","))
         );
-        mapping.put("executor_name", tailExecutorMethod.getAnnotation(TailRecursiveExecutor.class).executor());
 
-        mapping.entrySet().stream()
-                .map(entry -> String.format("\n\t%s: %s", entry.getKey(), entry.getValue()))
-                .forEach(System.out::print);
-        System.out.println("\n<<\n");
+        return mapping.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
+    }
 
-        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("tail_rec_engine_template.txt");
-             Scanner scanner = new Scanner(inputStream)) {
+    private byte[] fileContent(Map<String, String> translator) {
+        var output = new ByteArrayOutputStream();
+        try (
+                InputStream inputStream = getClass().getClassLoader()
+                        .getResourceAsStream("tail_rec_engine_template.txt");
+                Scanner scanner = new Scanner(inputStream)
+        ) {
 
-            Pattern pattern = Pattern.compile("^\\$\\{[a-zA-Z_]+}$");
+            Pattern pattern = Pattern.compile("^\\$\\{(str:)?[a-zA-Z_]+}$");
             String word;
             while (scanner.hasNext()) {
                 word = scanner.next();
                 if (pattern.matcher(word).matches()) {
                     word = word.substring(0, word.length() - 1).substring(2);
-                    boolean stringify = "tail_rec_name".equals(word);
-                    word = mapping.get(word).toString();
-                    if (stringify)
-                        word = '"' + word + '"';
+                    word = translator.get(word);
 
-                    System.out.println(word);
+                    output.writeBytes(word.getBytes());
+                    output.write(' ');
                     continue;
                 }
-                System.out.println(word);
+                output.writeBytes(word.getBytes());
+                output.write(' ');
             }
 
         }
         catch (IOException e) {
             throw new Error(e);
+        }
+
+        return output.toByteArray();
+    }
+
+    private void safeCreateClassFile(byte[] fileContent, String packageName, String className) {
+        try {
+            createClassFile(fileContent, packageName, className);
+        } catch(IOException e) {
+            processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage());
+            throw new Error(e);
+        }
+    }
+
+    private void createClassFile(byte[] fileContent, String packageName, String className) throws IOException {
+        var fileObject = processingEnvironment.getFiler()
+                .createSourceFile(packageName + "." + className);
+        try(PrintWriter outputStream = new PrintWriter(fileObject.openWriter())) {
+            var input = new ByteArrayInputStream(fileContent);
+            int r;
+            while ((r = input.read()) != -1)
+                outputStream.write(r);
         }
     }
 

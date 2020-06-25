@@ -1,41 +1,16 @@
 package be.jdevelopment.tailrec.lib.aspect;
 
-import be.jdevelopment.tailrec.lib.strategy.ArgsContainer;
 import be.jdevelopment.tailrec.lib.threading.ContextBinderTemplate;
-import be.jdevelopment.tailrec.lib.threading.MethodExecutionContext;
-import be.jdevelopment.tailrec.lib.threading.WithMethodExecutionContext;
 
 class DefaultContextBinder extends ContextBinderTemplate {
 
-    @Override protected void executeInContext(Runnable runnable) {
-        new ContextThread(runnable).start();
+    private DefaultContextHolder holder;
+    DefaultContextBinder(DefaultContextHolder holder) {
+        this.holder = holder;
     }
 
-    private static class ContextThread extends Thread implements WithMethodExecutionContext {
-
-        private final MethodExecutionContext ctx = new MethodExecutionContextBasicImpl();
-
-        ContextThread(Runnable r) {
-            super(r);
-        }
-
-        @Override public MethodExecutionContext getMethodExecutionContext() {
-            return ctx;
-        }
-    }
-
-    private static class MethodExecutionContextBasicImpl implements MethodExecutionContext {
-
-        private ArgsContainer proxy;
-
-        @Override public ArgsContainer getArgsContainer() {
-            return proxy;
-        }
-
-        @Override public void setArgsContainer(ArgsContainer argsContainer) {
-            this.proxy = argsContainer;
-        }
-
+    @Override protected void executeInContext(ContextualizedRunner runnable) {
+        runnable.run(holder.getMethodExecutionContext());
     }
 
 }

@@ -7,8 +7,4 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)
-public @interface TailRecursiveExecutor {
-
-    String executor() default "default-executor";
-
-}
+public @interface TailRecursiveExecutor {}

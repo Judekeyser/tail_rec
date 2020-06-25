@@ -7,7 +7,7 @@ import be.jdevelopment.tailrec.lib.threading.TailRecursiveExecutor;
 import java.math.BigInteger;
 
 @TailRecDirective
-public class FiboDirective {
+class FiboDirective {
 
     @TailRecursiveExecutor
     public BigInteger fibonacci(int N) throws Exception {

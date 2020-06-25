@@ -1,22 +1,23 @@
 package be.jdevelopment.tailrec.lib.aspect;
 
+import be.jdevelopment.tailrec.lib.strategy.ArgsContainer;
 import be.jdevelopment.tailrec.lib.strategy.RecursiveStrategy;
+import be.jdevelopment.tailrec.lib.strategy.RecursiveStrategyTemplate;
 import be.jdevelopment.tailrec.lib.threading.RecursiveContextBinder;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Objects;
-public class TailRecursiveAspect<T> {
+public class TailRecursiveAspect<T> extends RecursiveStrategyTemplate {
 
     /* Dynamic invokers */
 
     private final Object monitor = new Object();
     private MethodHandle aroundTailRec;
-    private final String tailRecConfig;
-    public TailRecursiveAspect(String tailRecConfig) {
-        this.tailRecConfig = tailRecConfig;
-    }
+    private final DefaultContextHolder contextHolder = new DefaultContextHolder();
+    private final DefaultContextBinder contextBinder = new DefaultContextBinder(contextHolder);
+    public TailRecursiveAspect() {}
 
     public void initializeAroundTailRec(Class<?> directive, String methodName, Class<?> namespace) {
         if (aroundTailRec != null) return;
@@ -47,32 +48,34 @@ public class TailRecursiveAspect<T> {
 
     private <T extends Throwable> Object weakenAroundTailRecAdvice(
             RecursiveStrategy.MethodCall methodCall,
-            RecursiveStrategy.ArgsProvider provider) throws T {
+            RecursiveStrategy.ArgsProvider provider
+    ) throws T {
         try {
-            return ThreadBasedStrategy.INSTANCE.tailRecTrap(methodCall, provider);
+            return tailRecTrap(methodCall, provider);
         } catch(Throwable e) {
             throw (T) e;
         }
     }
 
     public Object aroundExecutorAdvice(RecursiveContextBinder.MethodCall methodCall) {
-        Objects.requireNonNull(tailRecConfig);
+        contextHolder.renewContext();
         return weakenAroundExecutorAdvice(methodCall);
     }
 
     private <T extends Throwable> Object weakenAroundExecutorAdvice(RecursiveContextBinder.MethodCall methodCall) throws T {
         try {
-            return ThreadBasedStrategy.INSTANCE.getContextBinder(tailRecConfig)
-                    .bindInContext(methodCall);
-        } catch(Throwable e) {
+            return contextBinder.executeInContext(methodCall);
+        }
+        catch (Throwable e) {
             throw (T) e;
         }
     }
 
-    /* Implementation specific */
+    /* Args Container implementation */
 
-    public static void register(String binderKey, RecursiveContextBinder contextBinder) {
-        ThreadBasedStrategy.BINDER_REPOSITORY.put(binderKey, contextBinder);
+    @Override
+    protected ArgsContainer getArgsContainer() {
+        return contextHolder.getMethodExecutionContext().getArgsContainer();
     }
 
 }

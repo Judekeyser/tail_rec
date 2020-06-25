@@ -2,32 +2,40 @@ package be.jdevelopment.tailrec.lib.threading;
 
 import be.jdevelopment.tailrec.lib.strategy.ArgsContainer;
 
+import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public abstract class ContextBinderTemplate implements RecursiveContextBinder {
 
-    protected abstract void executeInContext(Runnable runnable);
+    @FunctionalInterface
+    protected interface ContextualizedRunner {
+        void run(MethodExecutionContext ctx);
+    }
+    abstract protected void executeInContext(ContextualizedRunner runnable);
 
-    @Override public final Object bindInContext(MethodCall methodCall) throws Throwable {
+    @Override public final Object executeInContext(MethodCall methodCall) throws Throwable {
         ArrayBlockingQueue<Object> queue = new ArrayBlockingQueue<>(1);
-        executeInContext(() -> {
-            getCurrentContext().setArgsContainer(ArgsContainer.getInstance());
-            getCurrentContext().getArgsContainer().setArgs(null);
+        ArrayBlockingQueue<Optional<Throwable>> executionFailed = new ArrayBlockingQueue<>(1);
+        executeInContext(ctx -> {
+            var execFailedValue = Optional.<Throwable> empty();
+            ctx.setArgsContainer(ArgsContainer.getInstance());
+            ctx.getArgsContainer().setArgs(null);
             try {
                 queue.offer(methodCall.call());
             } catch(Throwable error) {
-                queue.offer(error);
-                throw new RuntimeException(error);
+                execFailedValue = Optional.of(error);
             } finally {
-                getCurrentContext().getArgsContainer().setArgs(null);
-                getCurrentContext().setArgsContainer(null);
+                ctx.getArgsContainer().setArgs(null);
+                ctx.setArgsContainer(null);
+                executionFailed.offer(execFailedValue);
             }
         });
-        return queue.take();
-    }
 
-    private MethodExecutionContext getCurrentContext() {
-        return ((WithMethodExecutionContext) Thread.currentThread()).getMethodExecutionContext();
+        var maybeException = executionFailed.take();
+        if (maybeException.isPresent()) {
+            throw maybeException.get();
+        }
+        return queue.take();
     }
 
 }
