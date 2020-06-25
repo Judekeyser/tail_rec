@@ -27,9 +27,9 @@ Define a tail recursive algorithm using a interface **contract**:
 interface Fibo {
 
     default BigInteger fibonacci(int N) throws Exception {
-        if (N <= 0) throw
+        if (N < 0) throw
                 new IllegalArgumentException("Negative ranked Fibonacci is not defined");
-        if (N == 1)
+        if (N == 0 || N == 1)
             return BigInteger.valueOf(1L);
         return _fibonacci(BigInteger.valueOf(1L), BigInteger.valueOf(1L), N - 2);
     }
