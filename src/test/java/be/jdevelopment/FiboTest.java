@@ -12,7 +12,7 @@ public class FiboTest {
 
     @Test
     public void fibonacci() throws Exception {
-        BigInteger largeNumber = fibo.fibonacci(1000000);
+        BigInteger largeNumber = fibo.fibonacci(1_000_000);
 
         String asStr = largeNumber.toString();
 
