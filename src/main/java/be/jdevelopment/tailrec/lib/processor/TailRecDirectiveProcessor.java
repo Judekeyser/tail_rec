@@ -5,13 +5,11 @@ import be.jdevelopment.tailrec.lib.threading.TailRecursiveExecutor;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
 import java.io.*;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -42,8 +40,8 @@ public final class TailRecDirectiveProcessor extends AbstractProcessor {
                     = roundEnv.getElementsAnnotatedWith(annotation);
 
             for (Element annotatedElement : annotatedElements) {
-                var mapping = inferMapping(annotatedElement);
-                var content = fileContent(mapping);
+                Map<String, String> mapping = inferMapping(annotatedElement);
+                byte[] content = fileContent(mapping);
                 safeCreateClassFile(content, mapping.get("package_name"), mapping.get("engine_name"));
             }
         }
@@ -54,30 +52,30 @@ public final class TailRecDirectiveProcessor extends AbstractProcessor {
     private Map<String,String> inferMapping(Element element) {
         assert element.getKind() == ElementKind.CLASS;
         assert element instanceof TypeElement;
-        var clz = (TypeElement) element;
+        TypeElement clz = (TypeElement) element;
 
-        var engineName = clz.getAnnotation(TailRecDirective.class).name();
+        String engineName = clz.getAnnotation(TailRecDirective.class).name();
 
-        var tailRecursiveMethod = clz.getEnclosedElements().stream()
+        ExecutableElement tailRecursiveMethod = clz.getEnclosedElements().stream()
                 .filter($ -> $.getKind() == ElementKind.METHOD)
                 .filter($ -> $.getAnnotationsByType(TailRecursive.class).length > 0)
                 .map($ -> (ExecutableElement) $)
                 .findAny()
                 .orElseThrow();
 
-        var tailRecursiveParameters = tailRecursiveMethod.getParameters();
+        List<? extends VariableElement> tailRecursiveParameters = tailRecursiveMethod.getParameters();
 
-        var tailExecutorMethod = clz.getEnclosedElements().stream()
+        ExecutableElement tailExecutorMethod = clz.getEnclosedElements().stream()
                 .filter($ -> $.getKind() == ElementKind.METHOD)
                 .filter($ -> $.getAnnotationsByType(TailRecursiveExecutor.class).length > 0)
                 .map($ -> (ExecutableElement) $)
                 .findAny()
                 .orElseThrow();
 
-        var tailExecutorParameters = tailExecutorMethod.getParameters();
-        var tailExecutorThrowTypes = tailExecutorMethod.getThrownTypes();
+        List<? extends VariableElement> tailExecutorParameters = tailExecutorMethod.getParameters();
+        List<? extends TypeMirror> tailExecutorThrowTypes = tailExecutorMethod.getThrownTypes();
 
-        var mapping = new HashMap<String, Object>();
+        Map<String, Object> mapping = new HashMap<>();
         mapping.put("package_name", elementUtils.getPackageOf(element));
         mapping.put("directive_name", clz.getSimpleName());
         mapping.put("engine_name", engineName);
@@ -115,7 +113,7 @@ public final class TailRecDirectiveProcessor extends AbstractProcessor {
     }
 
     private byte[] fileContent(Map<String, String> translator) {
-        var output = new ByteArrayOutputStream();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (
                 InputStream inputStream = getClass().getClassLoader()
                         .getResourceAsStream("tail_rec_engine_template.txt");
@@ -156,10 +154,10 @@ public final class TailRecDirectiveProcessor extends AbstractProcessor {
     }
 
     private void createClassFile(byte[] fileContent, String packageName, String className) throws IOException {
-        var fileObject = processingEnvironment.getFiler()
+        JavaFileObject fileObject = processingEnvironment.getFiler()
                 .createSourceFile(packageName + "." + className);
         try(PrintWriter outputStream = new PrintWriter(fileObject.openWriter())) {
-            var input = new ByteArrayInputStream(fileContent);
+            ByteArrayInputStream input = new ByteArrayInputStream(fileContent);
             int r;
             while ((r = input.read()) != -1)
                 outputStream.write(r);

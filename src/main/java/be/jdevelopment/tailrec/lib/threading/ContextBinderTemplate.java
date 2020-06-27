@@ -17,7 +17,7 @@ public abstract class ContextBinderTemplate implements RecursiveContextBinder {
         ArrayBlockingQueue<Object> queue = new ArrayBlockingQueue<>(1);
         ArrayBlockingQueue<Optional<Throwable>> executionFailed = new ArrayBlockingQueue<>(1);
         executeInContext(ctx -> {
-            var execFailedValue = Optional.<Throwable> empty();
+            Optional<Throwable> execFailedValue = Optional.empty();
             ctx.setArgsContainer(ArgsContainer.getInstance());
             ctx.getArgsContainer().setArgs(null);
             try {
@@ -31,7 +31,7 @@ public abstract class ContextBinderTemplate implements RecursiveContextBinder {
             }
         });
 
-        var maybeException = executionFailed.take();
+        Optional<Throwable> maybeException = executionFailed.take();
         if (maybeException.isPresent()) {
             throw maybeException.get();
         }
