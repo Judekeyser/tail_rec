@@ -7,4 +7,8 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.TYPE)
-public @interface TailRecDirective { }
+public @interface TailRecDirective {
+
+    String name();
+
+}

@@ -55,7 +55,8 @@ public final class TailRecDirectiveProcessor extends AbstractProcessor {
         assert element.getKind() == ElementKind.CLASS;
         assert element instanceof TypeElement;
         var clz = (TypeElement) element;
-        assert element.getSimpleName().toString().endsWith("Directive");
+
+        var engineName = clz.getAnnotation(TailRecDirective.class).name();
 
         var tailRecursiveMethod = clz.getEnclosedElements().stream()
                 .filter($ -> $.getKind() == ElementKind.METHOD)
@@ -79,7 +80,7 @@ public final class TailRecDirectiveProcessor extends AbstractProcessor {
         var mapping = new HashMap<String, Object>();
         mapping.put("package_name", elementUtils.getPackageOf(element));
         mapping.put("directive_name", clz.getSimpleName());
-        mapping.put("engine_name", clz.getSimpleName().toString().substring(0, clz.getSimpleName().toString().length() - "Directive".length()));
+        mapping.put("engine_name", engineName);
         mapping.put("tail_rec_name", tailRecursiveMethod.getSimpleName());
         mapping.put("str:tail_rec_name", '"' + tailRecursiveMethod.getSimpleName().toString() + '"');
         mapping.put("tail_executor_name", tailExecutorMethod.getSimpleName());

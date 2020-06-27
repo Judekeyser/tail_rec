@@ -6,7 +6,7 @@ import be.jdevelopment.tailrec.lib.threading.TailRecursiveExecutor;
 
 import java.math.BigInteger;
 
-@TailRecDirective
+@TailRecDirective(name = "Fibo")
 interface FiboDirective {
 
     @TailRecursiveExecutor
