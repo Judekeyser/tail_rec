@@ -1,6 +1,5 @@
 package be.jdevelopment.tailrec.lib.aspect;
 
-import be.jdevelopment.tailrec.lib.strategy.ArgsContainer;
 import be.jdevelopment.tailrec.lib.strategy.RecursiveStrategy;
 import be.jdevelopment.tailrec.lib.strategy.RecursiveStrategyTemplate;
 import be.jdevelopment.tailrec.lib.threading.RecursiveContextBinder;
@@ -15,9 +14,11 @@ public class TailRecursiveAspect<T> extends RecursiveStrategyTemplate {
 
     private final Object monitor = new Object();
     private MethodHandle aroundTailRec;
-    private final DefaultContextHolder contextHolder = new DefaultContextHolder();
+    private final MethodExecutionContextBasicImpl contextHolder = new MethodExecutionContextBasicImpl();
     private final DefaultContextBinder contextBinder = new DefaultContextBinder(contextHolder);
-    public TailRecursiveAspect() {}
+    public TailRecursiveAspect() {
+        super(new MethodExecutionContextBasicImpl().getArgsContainer());
+    }
 
     public void initializeAroundTailRec(Class<?> directive, String methodName, Class<?> namespace) {
         if (aroundTailRec != null) return;
@@ -46,6 +47,7 @@ public class TailRecursiveAspect<T> extends RecursiveStrategyTemplate {
         return weakenAroundTailRecAdvice(call, provider);
     }
 
+    @SuppressWarnings("unchecked")
     private <T extends Throwable> Object weakenAroundTailRecAdvice(
             RecursiveStrategy.MethodCall methodCall,
             RecursiveStrategy.ArgsProvider provider
@@ -58,10 +60,10 @@ public class TailRecursiveAspect<T> extends RecursiveStrategyTemplate {
     }
 
     public Object aroundExecutorAdvice(RecursiveContextBinder.MethodCall methodCall) {
-        contextHolder.renewContext();
         return weakenAroundExecutorAdvice(methodCall);
     }
 
+    @SuppressWarnings("unchecked")
     private <T extends Throwable> Object weakenAroundExecutorAdvice(RecursiveContextBinder.MethodCall methodCall) throws T {
         try {
             return contextBinder.executeInContext(methodCall);
@@ -69,13 +71,6 @@ public class TailRecursiveAspect<T> extends RecursiveStrategyTemplate {
         catch (Throwable e) {
             throw (T) e;
         }
-    }
-
-    /* Args Container implementation */
-
-    @Override
-    protected ArgsContainer getArgsContainer() {
-        return contextHolder.getMethodExecutionContext().getArgsContainer();
     }
 
 }

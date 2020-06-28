@@ -1,7 +1,8 @@
 package be.jdevelopment.tailrec.lib.processor;
 
-import be.jdevelopment.tailrec.lib.strategy.TailRecursive;
-import be.jdevelopment.tailrec.lib.threading.TailRecursiveExecutor;
+import be.jdevelopment.tailrec.lib.annotations.TailRecursiveDirective;
+import be.jdevelopment.tailrec.lib.annotations.TailRecursive;
+import be.jdevelopment.tailrec.lib.annotations.TailRecursiveExecutor;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;

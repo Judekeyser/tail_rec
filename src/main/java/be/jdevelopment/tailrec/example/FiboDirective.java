@@ -1,8 +1,8 @@
 package be.jdevelopment.tailrec.example;
 
-import be.jdevelopment.tailrec.lib.processor.TailRecursiveDirective;
-import be.jdevelopment.tailrec.lib.strategy.TailRecursive;
-import be.jdevelopment.tailrec.lib.threading.TailRecursiveExecutor;
+import be.jdevelopment.tailrec.lib.annotations.TailRecursiveDirective;
+import be.jdevelopment.tailrec.lib.annotations.TailRecursive;
+import be.jdevelopment.tailrec.lib.annotations.TailRecursiveExecutor;
 
 import java.math.BigInteger;
 

@@ -1,4 +1,4 @@
-package be.jdevelopment.tailrec.lib.threading;
+package be.jdevelopment.tailrec.lib.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,4 +7,4 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)
-public @interface TailRecursiveExecutor {}
+public @interface TailRecursive { }

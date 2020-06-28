@@ -4,8 +4,8 @@ import be.jdevelopment.tailrec.lib.threading.ContextBinderTemplate;
 
 class DefaultContextBinder extends ContextBinderTemplate {
 
-    private DefaultContextHolder holder;
-    DefaultContextBinder(DefaultContextHolder holder) {
+    private final MethodExecutionContextBasicImpl holder;
+    DefaultContextBinder(MethodExecutionContextBasicImpl holder) {
         this.holder = holder;
     }
 

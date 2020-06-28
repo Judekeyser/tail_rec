@@ -2,11 +2,12 @@ package be.jdevelopment.tailrec.lib.strategy;
 
 public abstract class RecursiveStrategyTemplate implements RecursiveStrategy {
 
-    protected abstract ArgsContainer getArgsContainer();
+    private final ArgsContainer argsContainer;
+    protected RecursiveStrategyTemplate(ArgsContainer container) {
+        this.argsContainer = container;
+    }
 
     @Override public final Object tailRecTrap(MethodCall methodCall, ArgsProvider argsProvider) throws Throwable {
-        ArgsContainer argsContainer = getArgsContainer();
-
         if (argsContainer.getArgs() != null) {
             argsContainer.setArgs(argsProvider.getArgs());
             return breakChainStrategy();
