@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @SupportedAnnotationTypes(
-        "be.jdevelopment.tailrec.lib.processor.TailRecursiveDirective")
+        "be.jdevelopment.tailrec.lib.annotations.TailRecursiveDirective")
 @SupportedSourceVersion(SourceVersion.RELEASE_14)
 public final class TailRecDirectiveProcessor extends AbstractProcessor {
 

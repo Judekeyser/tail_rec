@@ -1,13 +1,16 @@
 package be.jdevelopment.tailrec.lib.strategy;
 
+import be.jdevelopment.tailrec.lib.threading.WithMethodExecutionContext;
+
 public abstract class RecursiveStrategyTemplate implements RecursiveStrategy {
 
-    private final ArgsContainer argsContainer;
-    protected RecursiveStrategyTemplate(ArgsContainer container) {
-        this.argsContainer = container;
+    protected final WithMethodExecutionContext ctxProvider;
+    protected RecursiveStrategyTemplate(WithMethodExecutionContext ctxProvider) {
+        this.ctxProvider = ctxProvider;
     }
 
     @Override public final Object tailRecTrap(MethodCall methodCall, ArgsProvider argsProvider) throws Throwable {
+        ArgsContainer argsContainer = ctxProvider.getMethodExecutionContext().getArgsContainer();
         if (argsContainer.getArgs() != null) {
             argsContainer.setArgs(argsProvider.getArgs());
             return breakChainStrategy();

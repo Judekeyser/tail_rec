@@ -14,10 +14,10 @@ public class TailRecursiveAspect<T> extends RecursiveStrategyTemplate {
 
     private final Object monitor = new Object();
     private MethodHandle aroundTailRec;
-    private final MethodExecutionContextBasicImpl contextHolder = new MethodExecutionContextBasicImpl();
-    private final DefaultContextBinder contextBinder = new DefaultContextBinder(contextHolder);
+    private final MethodExecutionContextBasicImpl contextHolder;
     public TailRecursiveAspect() {
-        super(new MethodExecutionContextBasicImpl().getArgsContainer());
+        super(new MethodExecutionContextBasicImpl());
+        contextHolder = (MethodExecutionContextBasicImpl) ctxProvider;
     }
 
     public void initializeAroundTailRec(Class<?> directive, String methodName, Class<?> namespace) {
@@ -66,7 +66,7 @@ public class TailRecursiveAspect<T> extends RecursiveStrategyTemplate {
     @SuppressWarnings("unchecked")
     private <T extends Throwable> Object weakenAroundExecutorAdvice(RecursiveContextBinder.MethodCall methodCall) throws T {
         try {
-            return contextBinder.executeInContext(methodCall);
+            return contextHolder.executeInContext(methodCall);
         }
         catch (Throwable e) {
             throw (T) e;
