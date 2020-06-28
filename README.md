@@ -83,7 +83,7 @@ This is important from two perspectives:
 2. from a technical point of view, the `fibonacci` method will aso perform inner state reset and initialization,
 hence its importance.
 
-What not letting `FiboDirective` be a class then?
+Why not letting `FiboDirective` be a class then?
 Because **we believe** that a tail recursive algorithm is more like a method contract and better fit the
 definition of interface. Indeed, as far as the end user is concerned, so object is mirroring the essence of
 tail recursive algorithm: **the notion of internal state is void and thus, it does not really enter the 
