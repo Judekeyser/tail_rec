@@ -54,7 +54,7 @@ public final class TailRecDirectiveProcessor extends AbstractProcessor {
         assert element instanceof TypeElement;
         TypeElement clz = (TypeElement) element;
 
-        String engineName = clz.getAnnotation(TailRecDirective.class).name();
+        String engineName = clz.getAnnotation(TailRecursiveDirective.class).exportedAs();
 
         ExecutableElement tailRecursiveMethod = clz.getEnclosedElements().stream()
                 .filter($ -> $.getKind() == ElementKind.METHOD)

@@ -1,12 +1,12 @@
 package be.jdevelopment.tailrec.example;
 
-import be.jdevelopment.tailrec.lib.processor.TailRecDirective;
+import be.jdevelopment.tailrec.lib.processor.TailRecursiveDirective;
 import be.jdevelopment.tailrec.lib.strategy.TailRecursive;
 import be.jdevelopment.tailrec.lib.threading.TailRecursiveExecutor;
 
 import java.math.BigInteger;
 
-@TailRecDirective(name = "Fibo")
+@TailRecursiveDirective(exportedAs = "Fibo")
 interface FiboDirective {
 
     @TailRecursiveExecutor
