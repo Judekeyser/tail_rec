@@ -14,6 +14,7 @@ public abstract class ContextBinderTemplate implements RecursiveContextBinder {
     abstract protected void executeInContext(ContextualizedRunner runnable);
 
     @Override public final Object executeInContext(MethodCall methodCall) throws Throwable {
+        /* Implementation that may be used for threading -- muted in the current code goal
         ArrayBlockingQueue<Object> queue = new ArrayBlockingQueue<>(1);
         ArrayBlockingQueue<Optional<Throwable>> executionFailed = new ArrayBlockingQueue<>(1);
         executeInContext(ctx -> {
@@ -36,6 +37,24 @@ public abstract class ContextBinderTemplate implements RecursiveContextBinder {
             throw maybeException.get();
         }
         return queue.take();
+        */
+
+        executeInContext(this::initContext);
+        try {
+            return methodCall.call();
+        } finally {
+            executeInContext(this::finalizeContext);
+        }
+    }
+
+    private void initContext(MethodExecutionContext ctx) {
+        ctx.setArgsContainer(ArgsContainer.getInstance());
+        ctx.getArgsContainer().setArgs(null);
+    }
+
+    private void finalizeContext(MethodExecutionContext ctx) {
+        ctx.getArgsContainer().setArgs(null);
+        ctx.setArgsContainer(null);
     }
 
 }

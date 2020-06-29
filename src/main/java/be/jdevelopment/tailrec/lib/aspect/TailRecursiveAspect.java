@@ -61,13 +61,12 @@ public class TailRecursiveAspect<T> extends RecursiveStrategyTemplate {
         this.caughtArgs = args;
     }
 
-    RecursiveStrategy.ArgsProvider provider = () -> caughtArgs;
     RecursiveStrategy.MethodCall methodCall;
 
     @SuppressWarnings("unchecked")
     public <T extends Throwable> Object aroundTailRecAdvice() throws T {
         try {
-            return tailRecTrap(methodCall, provider);
+            return tailRecTrap(methodCall, caughtArgs);
         } catch(Throwable e) {
             throw (T) e;
         }

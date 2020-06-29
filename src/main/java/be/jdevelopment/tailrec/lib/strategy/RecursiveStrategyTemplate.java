@@ -9,9 +9,8 @@ public abstract class RecursiveStrategyTemplate implements RecursiveStrategy {
         this.ctxProvider = ctxProvider;
     }
 
-    @Override public final Object tailRecTrap(MethodCall methodCall, ArgsProvider argsProvider) throws Throwable {
+    @Override public final Object tailRecTrap(MethodCall methodCall, Object[] args) throws Throwable {
         ArgsContainer argsContainer = ctxProvider.getMethodExecutionContext().getArgsContainer();
-        Object[] args = argsProvider.getArgs();
         if (argsContainer.getArgs() != null) {
             argsContainer.setArgs(args);
             return PROOF;
