@@ -11,13 +11,14 @@ public abstract class RecursiveStrategyTemplate implements RecursiveStrategy {
 
     @Override public final Object tailRecTrap(MethodCall methodCall, ArgsProvider argsProvider) throws Throwable {
         ArgsContainer argsContainer = ctxProvider.getMethodExecutionContext().getArgsContainer();
+        Object[] args = argsProvider.getArgs();
         if (argsContainer.getArgs() != null) {
-            argsContainer.setArgs(argsProvider.getArgs());
-            return breakChainStrategy();
+            argsContainer.setArgs(args);
+            return PROOF;
         }
 
         try {
-            argsContainer.setArgs(argsProvider.getArgs());
+            argsContainer.setArgs(args);
             return trapStrategy(methodCall, argsContainer);
         } finally {
             argsContainer.setArgs(null);
@@ -33,10 +34,6 @@ public abstract class RecursiveStrategyTemplate implements RecursiveStrategy {
             if (caught != PROOF)
                 return caught;
         }
-    }
-
-    private Object breakChainStrategy() {
-        return PROOF;
     }
 
 }

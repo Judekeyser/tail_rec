@@ -7,7 +7,6 @@ import be.jdevelopment.tailrec.lib.threading.RecursiveContextBinder;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.Objects;
 public class TailRecursiveAspect<T> extends RecursiveStrategyTemplate {
 
     /* Dynamic invokers */
@@ -20,7 +19,11 @@ public class TailRecursiveAspect<T> extends RecursiveStrategyTemplate {
         contextHolder = (MethodExecutionContextBasicImpl) ctxProvider;
     }
 
-    public void initializeAroundTailRec(Class<?> directive, String methodName, Class<?> namespace) {
+    @FunctionalInterface
+    public interface MethodCallProvider {
+        RecursiveStrategy.MethodCall provide (MethodHandle handle);
+    }
+    public <U extends Enum<U>> void initializeAroundTailRec(Class<?> directive, String methodName, Class<U> namespace, MethodCallProvider templateMethodCall) {
         if (aroundTailRec != null) return;
         synchronized (monitor) {
             if (aroundTailRec != null) return;
@@ -28,6 +31,7 @@ public class TailRecursiveAspect<T> extends RecursiveStrategyTemplate {
                 MethodType jvmType = MethodType.methodType(Object.class, Object[].class, namespace);
                 MethodHandles.Lookup lookup = MethodHandles.lookup();
                 aroundTailRec = lookup.findVirtual(directive, methodName, jvmType);
+                this.methodCall = templateMethodCall.provide(aroundTailRec);
             } catch(Throwable e) {
                 throw new Error(e);
             }
@@ -35,29 +39,6 @@ public class TailRecursiveAspect<T> extends RecursiveStrategyTemplate {
     }
 
     /* Utils from directive implementations */
-
-    @FunctionalInterface
-    public interface MethodCallProvider {
-        RecursiveStrategy.MethodCall provide (MethodHandle handle);
-    }
-
-    public Object aroundTailRecAdvice(MethodCallProvider methodCallProvider, RecursiveStrategy.ArgsProvider provider) {
-        Objects.requireNonNull(aroundTailRec);
-        RecursiveStrategy.MethodCall call = methodCallProvider.provide(aroundTailRec);
-        return weakenAroundTailRecAdvice(call, provider);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T extends Throwable> Object weakenAroundTailRecAdvice(
-            RecursiveStrategy.MethodCall methodCall,
-            RecursiveStrategy.ArgsProvider provider
-    ) throws T {
-        try {
-            return tailRecTrap(methodCall, provider);
-        } catch(Throwable e) {
-            throw (T) e;
-        }
-    }
 
     public Object aroundExecutorAdvice(RecursiveContextBinder.MethodCall methodCall) {
         return weakenAroundExecutorAdvice(methodCall);
@@ -69,6 +50,25 @@ public class TailRecursiveAspect<T> extends RecursiveStrategyTemplate {
             return contextHolder.executeInContext(methodCall);
         }
         catch (Throwable e) {
+            throw (T) e;
+        }
+    }
+
+    /* Improvement test */
+
+    private Object[] caughtArgs = null;
+    public void registerArgs(Object[] args) {
+        this.caughtArgs = args;
+    }
+
+    RecursiveStrategy.ArgsProvider provider = () -> caughtArgs;
+    RecursiveStrategy.MethodCall methodCall;
+
+    @SuppressWarnings("unchecked")
+    public <T extends Throwable> Object aroundTailRecAdvice() throws T {
+        try {
+            return tailRecTrap(methodCall, provider);
+        } catch(Throwable e) {
             throw (T) e;
         }
     }

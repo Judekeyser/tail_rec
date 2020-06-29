@@ -28,15 +28,13 @@ public final class ${engine_name} implements ${directive_name} {
 
         @Override
         public Object ${tail_rec_name} ( ${tail_rec_args_signature} ) {
-            return aspect.aroundTailRecAdvice(
-                    $ -> args -> $.invokeExact(this, args, NAMESPACE.SELF),
-                    () -> new Object[] { ${tail_rec_args_name} }
-                    );
+            aspect.registerArgs(new Object[] { ${tail_rec_args_name} });
+            return aspect.aroundTailRecAdvice();
         }
 
         @Override
         public ${tail_executor_return_type} ${tail_executor_name} ( ${tail_executor_args_signature} ) throws ${tail_executor_throw_types} {
-            aspect.initializeAroundTailRec(getClass(), ${str:tail_rec_name} , NAMESPACE.class);
+            aspect.initializeAroundTailRec(getClass(), ${str:tail_rec_name} , NAMESPACE.class, $ -> args -> $.invokeExact(this, args, NAMESPACE.SELF));
             return ( ${tail_executor_return_type} )
                 aspect.aroundExecutorAdvice(() -> ${directive_name} .super. ${tail_executor_name} ( ${tail_executor_args_name} ));
         }
