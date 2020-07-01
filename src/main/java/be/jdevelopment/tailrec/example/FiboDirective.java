@@ -7,7 +7,7 @@ import be.jdevelopment.tailrec.lib.annotations.TailRecursiveExecutor;
 import java.math.BigInteger;
 
 @TailRecursiveDirective(exportedAs = "Fibo")
-interface FiboDirective {
+public interface FiboDirective {
 
     @TailRecursiveExecutor
     default BigInteger fibonacci(int N) throws Exception {

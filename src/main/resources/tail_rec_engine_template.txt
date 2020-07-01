@@ -1,56 +1,64 @@
 package ${package_name} ;
 
-import java.lang.invoke.*;
-
-import be.jdevelopment.tailrec.lib.strategy.RecursiveStrategy;
-import be.jdevelopment.tailrec.lib.aspect.TailRecursiveAspect;
-
 public final class ${engine_name} implements ${directive_name} {
-    private final Engine engine = new Engine();
-
-    @Override
-    public Object ${tail_rec_name} ( ${tail_rec_args_signature} ) {
-        throw new java.lang.UnsupportedOperationException();
-    }
 
     @Override
     public ${tail_executor_return_type} ${tail_executor_name} ( ${tail_executor_args_signature} ) throws ${tail_executor_throw_types} {
-        return engine. ${tail_executor_name} ( ${tail_executor_args_name} );
+        return new TailRecTrap(). ${tail_executor_name} ( ${tail_executor_args_name} );
     }
 
-    public static final class Engine implements ${directive_name} {
-        private final TailRecursiveAspect< ${engine_name} > aspect;
-        private final MethodHandle dynamicInvoker;
-        private Engine() {
-            try {
-                MethodType jvmType = MethodType.methodType(Object.class, Object[].class, NAMESPACE.class);
-                MethodHandles.Lookup lookup = MethodHandles.lookup();
-                var handle = lookup.findVirtual(Engine.class, ${str:tail_rec_name} , jvmType);
-                handle = handle.bindTo(engine);
-                dynamicInvoker = new ConstantCallSite(handle).getTarget();
-            } catch(Throwable e) {
-                throw new Error(e);
-            }
-            aspect = new TailRecursiveAspect(this::call);
-        }
+    @Override
+    public Object ${tail_rec_name} ( ${tail_rec_args_signature} ) {
+        throw new UnsupportedOperationException();
+    }
 
-        private enum NAMESPACE {SELF;}
+    private static final Object TOKEN = new Object();
 
-        public Object ${tail_rec_name} (Object[] args, NAMESPACE self) {
-            assert self != null;
-            return ${directive_name} .super. ${tail_rec_name} ( ${tail_rec_unwrapped_array} );
+    private static final class TailRecTrap implements ${directive_name} {
+
+        Object[] argsContainer = new Object[ ${args_container_size} ];
+        DummyEngine dummyEngine = new DummyEngine(argsContainer);
+
+        @Override
+        public ${tail_executor_return_type} ${tail_executor_name} ( ${tail_executor_args_signature} ) throws ${tail_executor_throw_types} {
+            return ${directive_name} .super. ${tail_executor_name} ( ${tail_executor_args_name} );
         }
 
         @Override
         public Object ${tail_rec_name} ( ${tail_rec_args_signature} ) {
-            aspect.registerArgs(new Object[] { ${tail_rec_args_name} });
-            return aspect.aroundTailRecAdvice();
+            ${array_fill_instructions}
+            Object caught;
+            while(true) {
+                caught = dummyEngine.invoke();
+                if (caught != TOKEN)
+                    return caught;
+            }
+        }
+
+    }
+
+    private static final class DummyEngine implements ${directive_name} {
+
+        private final Object[] argsContainer;
+        DummyEngine(Object[] argsContainer) {
+            this.argsContainer = argsContainer;
+        }
+
+        Object invoke() {
+            return ${directive_name} .super. ${tail_rec_name} ( ${tail_rec_unwrapped_array} );
         }
 
         @Override
         public ${tail_executor_return_type} ${tail_executor_name} ( ${tail_executor_args_signature} ) throws ${tail_executor_throw_types} {
-            return ( ${tail_executor_return_type} )
-                aspect.aroundExecutorAdvice(() -> ${directive_name} .super. ${tail_executor_name} ( ${tail_executor_args_name} ));
+            throw new UnsupportedOperationException();
         }
+
+        @Override
+        public Object ${tail_rec_name} ( ${tail_rec_args_signature} ) {
+            ${array_fill_instructions}
+            return TOKEN;
+        }
+
     }
+
 }

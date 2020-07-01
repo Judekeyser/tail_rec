@@ -1,6 +1,8 @@
 package be.jdevelopment;
 
 import be.jdevelopment.tailrec.example.Fibo;
+import be.jdevelopment.tailrec.example.FiboDirective;
+import be.jdevelopment.tailrec.example.FiboEssai;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -8,7 +10,7 @@ import java.math.BigInteger;
 
 public class FiboTest {
 
-    Fibo fibo = new Fibo();
+    FiboDirective fibo = new Fibo();
 
     @Test
     public void fibonacci() throws Exception {

@@ -84,7 +84,7 @@ public final class TailRecDirectiveProcessor extends AbstractProcessor {
         mapping.put("str:tail_rec_name", '"' + tailRecursiveMethod.getSimpleName().toString() + '"');
         mapping.put("tail_executor_name", tailExecutorMethod.getSimpleName());
         mapping.put("tail_rec_unwrapped_array", IntStream.range(0, tailRecursiveParameters.size())
-                .mapToObj(i -> String.format("(%s)args[%d]", tailRecursiveParameters.get(i).asType(), i))
+                .mapToObj(i -> String.format("(%s)argsContainer[%d]", tailRecursiveParameters.get(i).asType(), i))
                 .collect(Collectors.joining(","))
         );
         mapping.put("tail_rec_args_signature", IntStream.range(0, tailRecursiveParameters.size())
@@ -108,6 +108,11 @@ public final class TailRecDirectiveProcessor extends AbstractProcessor {
                 .map(TypeMirror::toString)
                 .collect(Collectors.joining(","))
         );
+        mapping.put("array_fill_instructions", IntStream.range(0, tailRecursiveParameters.size())
+                .mapToObj(i -> String.format("argsContainer[%d] = arg%d;", i, i))
+                .collect(Collectors.joining(""))
+        );
+        mapping.put("args_container_size", String.valueOf(tailRecursiveParameters.size()));
 
         return mapping.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
