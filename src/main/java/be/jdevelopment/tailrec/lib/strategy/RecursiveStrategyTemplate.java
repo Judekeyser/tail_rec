@@ -18,21 +18,20 @@ public abstract class RecursiveStrategyTemplate implements RecursiveStrategy {
 
         try {
             argsContainer.setArgs(args);
-            return trapStrategy(methodCall, argsContainer);
+
+            /* Trap strategy */
+            Object caught;
+            while (true) {
+                caught = methodCall.call(argsContainer.getArgs());
+                if (caught != PROOF)
+                    return caught;
+            }
+            /*/Trap strategy */
         } finally {
             argsContainer.setArgs(null);
         }
     }
 
     private final static Object PROOF = new Object();
-
-    private Object trapStrategy(MethodCall methodCall, ArgsContainer argsContainer) throws Throwable {
-        Object caught;
-        while (true) {
-            caught = methodCall.call(argsContainer.getArgs());
-            if (caught != PROOF)
-                return caught;
-        }
-    }
 
 }
