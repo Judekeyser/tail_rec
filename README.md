@@ -1,110 +1,82 @@
-# Tail recursion in Java
+# Forewords
+MIT License
 
-This project illustrates an example of code generation via annotation processing
-to bring tail recursion in Java.
+Copyright (c) 2019 Judekeyser
 
-Note: A previous version of the project was available using Aspect Oriented Programming.
-After migrating to JDK14, we decided to slightly review the aspect coding and we finally
-decided to abandon AOP in favor of annotation processing. This is hopefully closer to
-basic standard tool proposed by JVM.
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
-## Explanations
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
-Find a trial of pedagogical information
-about code structure at
-https://gist.github.com/Judekeyser/281aeb0fd9903da7245f0b2e3f7fc92e/
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-Note: At this point, the note is written using the previous *v0/AOP-oriented* code.
-From the algorithmic point of view, only minor changes were brought to the mechanism we propose,
-hence the note remains a good starting point for anyone eager to learn how things work in more details.
+# Tail recursion utility
 
-## Usage
+This utility is concerned with bringing a bit of tail recursion in Java.
 
-### Using the annotations
+## Example
 
-Define a tail recursive algorithm using a interface **contract**:
+Assume you have a tail recursive definition of the Fibonacci numbers:
 ```java
 interface Fibo {
+  default BigInteger compute (int rank) {
+    final BigInteger ONE = BigInteger.valueOf(1L);
+    return (BigInteger) _compute (rank, ONE, ONE);
+  }
 
-    default BigInteger fibonacci(int N) throws Exception {
-        if (N < 0) throw
-                new IllegalArgumentException("Negative ranked Fibonacci is not defined");
-        if (N == 0 || N == 1)
-            return BigInteger.valueOf(1L);
-        return _fibonacci(BigInteger.valueOf(1L), BigInteger.valueOf(1L), N - 2);
-    }
-
-    default BigInteger _fibonacci(BigInteger prev, BigInteger current, int remainingIter) {
-        if (remainingIter == 0)
-            return current;
-        return _fibonacci(current, prev.add(current), remainingIter - 1);
-    }
-
+  default Object _compute (int rank, BigInteger s1, BigInteger s0) {  // (1)
+    return switch (rank) {
+      case 0  -> s0;
+      case 1  -> s1;
+      default -> _compute (rank - 1, s0.add(s1), s1);
+    };
+  }
 }
 ```
-Bring the following changes to the contract:
-1. annotate `fibonacci` with `@TailRecursiveExecutor`
-2. annotate `_fibonacci` with `@TailRecursive`
-3. annotate the whole contract with `@TailRecursiveDirective` and refactor its name to add `Directive`
-5. change the return type of `_fibonacci` to `Object` (and make the cast in `fibonacci`)
+We provide a Proxy utility to instantiate that algorithm in a tail recursive fashion:
 ```java
-@TailRecursiveDirective(exportedAs = "Fibo")
-interface FiboDirective {
+var fibo = TailRecursive .optimize (
+             Fibo.class, // (2)
+             "_compute", // (3)
+             (p,m,a) -> java.lang.reflect.InvocationHandler .invokeDefault(p,m,a) // (4)
+           );
 
-    @TailRecursiveExecutor
-    default BigInteger fibonacci(int N) throws Exception {
-        if (N < 0) throw
-                new IllegalArgumentException("Negative ranked Fibonacci is not defined");
-        if (N == 0 || N == 1)
-            return BigInteger.valueOf(1L);
-        return (BigInteger) _fibonacci(BigInteger.valueOf(1L), BigInteger.valueOf(1L), N - 2);
-    }
-
-    @TailRecursive
-    default Object _fibonacci(BigInteger prev, BigInteger current, int remainingIter) {
-        if (remainingIter == 0)
-            return current;
-        return _fibonacci(current, prev.add(current), remainingIter - 1);
-    }
-
-}
+for (var rank : new int[] { 0, 1, 2, 3, 4, 5, 10, 50_000 })
+  System.out.printf("The Fibonacci number of rank %d is %d\n", rank, fibo .compute (rank));
 ```
-Letting the `be.jdevelopment.tailrec.lib.processor.TailRecDirectiveProcessor`
-run on your project will create a subclass of `FiboDirective`
-whose name is `Fibo`.
 
-The generated class is `public final` and implements the `FiboDirective` contract.
-However, there is one subtle thing: the `_fibonacci` has been overwritten in such a way that it now triggers an
-`UnsupportedOperationException`. This is to prevent external user from using the method without coming from
-the executor method `fibonacci`.
+## Library limitations
 
-This is important from two perspectives:
-1. you usually do not want a user to directly use `_fibonacci` and bypass input argument validation.
-2. from a technical point of view, the `fibonacci` method will aso perform inner state reset and initialization,
-hence its importance.
+The following limitations currently exist on the library, without a clear hope to reduce them.
+(All contributions are welcome!)
 
-Why not letting `FiboDirective` be a class then?
-Because **we believe** that a tail recursive algorithm is more like a method contract and better fit the
-definition of interface. Indeed, as far as the end user is concerned, so object is mirroring the essence of
-tail recursive algorithm: **the notion of internal state is void and thus, it does not really enter the 
-definition of an Object**, from OOP point of view.
+### Return type must be `Object`
+The return type of the tail recursive method must be `Object`. In general this is not a big deal because:
+1. as the method is tail recursive, the return type is not expected to be used in the recursive method
+2. usually the tail recursive call can be wrapped inside a safe, initial arguments manager method, that can take care of the cast.
 
-## Benchmark comparison
+### The class to optimized must be passed
+The class to optimized must be passed as a parameter. It should be an interface.
+In exchange, the typing of the return type is inferred as an instance of the interface.
 
-In order to evaluate the quality of the deployed strategy,
-we have realized micro benchmarks between four different
-approaches (see the `FactoTest` that computed factorial numbers):
+### The tail recursive method name must be passed
+The tail recursive method name must be passed as an argument.
+It is currently not possible to annotate this method and refer to it by reflexion, as it may not be reachable (different module).
 
-1. The usual recursive way, in Java
-2. The tail recursive way using the generated class (our approach)
-3. The stream foldLeft way, using foldLeft like operation on a stream
-4. The Scala built-in tail recursive way, using idiomatic Scala code.
+### The `InvocationHandler` must be passed
+An instance of `InvocationHandler` must be passed. This invocation handler will be in charge of dispatching a method on the created intance.
+In our use case, it's a method-default dispatch strategy.
 
-The following results are from runnig `13!`:
-```text
-Benchmark                 Mode  Cnt    Score    Error  Units
-FactoTest.recFacto13      avgt    5  265,270 ±  0,282  ns/op
-FactoTest.scalaFacto13    avgt    5  304,201 ±  2,605  ns/op
-FactoTest.tailrecFacto13  avgt    5  368,343 ±  0,759  ns/op  << us
-FactoTest.streamFacto13   avgt    5  481,922 ± 52,967  ns/op
-```
+This limitation exists for security concerns too (different module).
+
+## Performance
+Our approach is less performant than a regular recursive invocation, as it uses under the hood a total of three handlers to fake recursion.
+
+## Build
+
+The build is minimalist on purpose. The library in itself is only one file.
+
+
+
+
+
+
