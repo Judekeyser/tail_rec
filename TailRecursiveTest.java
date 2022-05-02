@@ -1,12 +1,15 @@
 import be.jdevelopment.tailrec.TailRecursive;
 
+import java.lang.reflect.InvocationHandler;
 import java.math.BigInteger;
+
+import static java.math.BigInteger.valueOf;
 
 public class TailRecursiveTest {
 
   interface Fibo {
     default BigInteger compute (int rank) {
-      final BigInteger ONE = BigInteger.valueOf(1L);
+      var ONE = valueOf(1L);
       return (BigInteger) _compute (rank, ONE, ONE);
     }
 
@@ -21,12 +24,12 @@ public class TailRecursiveTest {
 
   public static void main(String... args) {
     var fibo = TailRecursive .optimize (
-                 Fibo.class, // The class you want to optimize
-                 "_compute", // The name of the tail-recursive method
-                 (p,m,a) -> java.lang.reflect.InvocationHandler .invokeDefault(p,m,a) // Don't ask too much questions - security concern
-               );
+            Fibo.class, // The class you want to optimize
+            "_compute", // The name of the tail-recursive method
+            InvocationHandler::invokeDefault // Don't ask too much questions - security concern
+    );
 
-    for (var rank : new int[] { 0, 1, 2, 3, 4, 5, 10, 50_000 })
+    for (var rank : new int[] { 0, 1, 2, 3, 4, 5, 10, 100_000 })
       System.out.printf("The Fibonacci number of rank %d is %d\n", rank, fibo .compute (rank));
   }
 }
